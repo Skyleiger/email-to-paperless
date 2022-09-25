@@ -25,7 +25,7 @@ jobs:
       - name: Cache build files
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/target') }}
           path: target
       - name: Compile with Maven
         run: mvn -T 1C compile
@@ -46,7 +46,7 @@ jobs:
       - name: Cache build files
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/target') }}
           path: target
       - name: Test with Maven
         run: mvn -T 1C test
@@ -61,13 +61,13 @@ jobs:
         uses: actions/setup-java@v3.1.1
         with:
           distribution: temurin
-          java-version: 7
+          java-version: 17
           architecture: x64
           cache: 'maven'
       - name: Cache build files
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/target') }}
           path: target
       - name: Package with Maven
         run: mvn -T 1C package
@@ -94,7 +94,7 @@ jobs:
       - name: Cache build files
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/target') }}
           path: target
       - name: Verify with Maven
         run: mvn -T 1C verify
@@ -115,7 +115,7 @@ jobs:
       - name: Cache build files
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/target') }}
           path: target
       - name: Install with Maven
         run: mvn -T 1C install
@@ -136,7 +136,7 @@ jobs:
       - name: Cache build files
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/target') }}
           path: target
       - name: Install with Maven
         run: mvn -T 1C deploy
