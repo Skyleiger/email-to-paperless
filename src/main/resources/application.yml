@@ -8,7 +8,7 @@ paperless:
   token: ${PAPERLESS_TOKEN}
   tags: ${PAPERLESS_TAGS:}
 email:
-  update-interval: ${EMAIL_UPDATE_INTERVAL:240000}
+  update-interval: ${EMAIL_UPDATE_INTERVAL:240}
 server:
   error:
     whitelabel:
