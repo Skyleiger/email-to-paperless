@@ -11,7 +11,7 @@
 
     <groupId>de.dwienzek</groupId>
     <artifactId>email-to-paperless</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>email-to-paperless</name>
     <description>email-to-paperless</description>
 
