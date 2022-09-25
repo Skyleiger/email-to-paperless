@@ -1,0 +1,142 @@
+name: Maven-Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sourcecode
+        uses: actions/checkout@v3.0.0
+      - name: Set up Java 17
+        uses: actions/setup-java@v3.1.1
+        with:
+          distribution: temurin
+          java-version: 17
+          architecture: x64
+          cache: 'maven'
+      - name: Cache build files
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          path: target
+      - name: Compile with Maven
+        run: mvn -T 1C compile
+
+  test:
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sourcecode
+        uses: actions/checkout@v3.0.0
+      - name: Set up Java 17
+        uses: actions/setup-java@v3.1.1
+        with:
+          distribution: temurin
+          java-version: 17
+          architecture: x64
+          cache: 'maven'
+      - name: Cache build files
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          path: target
+      - name: Test with Maven
+        run: mvn -T 1C test
+
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sourcecode
+        uses: actions/checkout@v3.0.0
+      - name: Set up Java 17
+        uses: actions/setup-java@v3.1.1
+        with:
+          distribution: temurin
+          java-version: 7
+          architecture: x64
+          cache: 'maven'
+      - name: Cache build files
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          path: target
+      - name: Package with Maven
+        run: mvn -T 1C package
+      - name: Upload built JAR
+        uses: actions/upload-artifact@v3
+        with:
+          name: email-to-paperless.jar
+          path: target/email-to-paperless.jar
+          if-no-files-found: error
+
+  verify:
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sourcecode
+        uses: actions/checkout@v3.0.0
+      - name: Set up Java 17
+        uses: actions/setup-java@v3.1.1
+        with:
+          distribution: temurin
+          java-version: 17
+          architecture: x64
+          cache: 'maven'
+      - name: Cache build files
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          path: target
+      - name: Verify with Maven
+        run: mvn -T 1C verify
+
+  install:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sourcecode
+        uses: actions/checkout@v3.0.0
+      - name: Set up Java 17
+        uses: actions/setup-java@v3.1.1
+        with:
+          distribution: temurin
+          java-version: 17
+          architecture: x64
+          cache: 'maven'
+      - name: Cache build files
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          path: target
+      - name: Install with Maven
+        run: mvn -T 1C install
+
+  deploy:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sourcecode
+        uses: actions/checkout@v3.0.0
+      - name: Set up Java 17
+        uses: actions/setup-java@v3.1.1
+        with:
+          distribution: temurin
+          java-version: 17
+          architecture: x64
+          cache: 'maven'
+      - name: Cache build files
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-maven-${{ hashFiles('*') }}
+          path: target
+      - name: Install with Maven
+        run: mvn -T 1C deploy

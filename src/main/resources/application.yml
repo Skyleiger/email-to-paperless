@@ -1,0 +1,29 @@
+imap:
+  url: ${IMAP_URL}
+  username: ${IMAP_USERNAME}
+  password: ${IMAP_PASSWORD}
+  excludedFolders: ${IMAP_EXCLUDED_FOLDERS:}
+paperless:
+  url: ${PAPERLESS_URL}
+  token: ${PAPERLESS_TOKEN}
+  tags: ${PAPERLESS_TAGS:}
+email:
+  update-interval: ${EMAIL_UPDATE_INTERVAL:240000}
+server:
+  error:
+    whitelabel:
+      enabled: false
+spring:
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MariaDB103Dialect
+    show-sql: true
+    generate-ddl: true
