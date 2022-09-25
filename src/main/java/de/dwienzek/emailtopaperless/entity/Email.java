@@ -3,8 +3,8 @@ package de.dwienzek.emailtopaperless.entity;
 import lombok.*;
 import org.hibernate.Hibernate;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;

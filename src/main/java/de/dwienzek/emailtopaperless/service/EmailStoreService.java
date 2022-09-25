@@ -3,13 +3,18 @@ package de.dwienzek.emailtopaperless.service;
 import com.google.common.html.HtmlEscapers;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Resources;
-import com.sun.mail.util.BASE64DecoderStream;
 import de.dwienzek.emailtopaperless.dto.MimeBody;
 import de.dwienzek.emailtopaperless.dto.MimeHeaders;
 import de.dwienzek.emailtopaperless.dto.MimeInlineImage;
 import de.dwienzek.emailtopaperless.dto.StoredEmail;
 import de.dwienzek.emailtopaperless.util.ExceptionBiConsumer;
 import de.dwienzek.emailtopaperless.util.StringReplacer;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.Part;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeUtility;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -21,16 +26,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.Part;
-import javax.mail.internet.ContentType;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeUtility;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -417,8 +413,11 @@ public class EmailStoreService {
 
             String id = currentPart.getHeader("Content-Id")[0];
 
-            BASE64DecoderStream decoderStream = (BASE64DecoderStream) currentPart.getContent();
-            String imageBase64 = Base64.getEncoder().encodeToString(decoderStream.readAllBytes());
+            String imageBase64;
+            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                currentPart.getDataHandler().writeTo(byteArrayOutputStream);
+                imageBase64 = Base64.getEncoder().encodeToString(byteArrayOutputStream.toByteArray());
+            }
 
             images.put(id, new MimeInlineImage(imageBase64, new ContentType(currentPart.getContentType())));
         });

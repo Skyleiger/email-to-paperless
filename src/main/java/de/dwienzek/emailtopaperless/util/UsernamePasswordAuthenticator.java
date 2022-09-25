@@ -3,8 +3,8 @@ package de.dwienzek.emailtopaperless.util;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.mail.Authenticator;
-import javax.mail.PasswordAuthentication;
+import jakarta.mail.Authenticator;
+import jakarta.mail.PasswordAuthentication;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

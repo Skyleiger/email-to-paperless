@@ -5,6 +5,7 @@ import de.dwienzek.emailtopaperless.entity.Email;
 import de.dwienzek.emailtopaperless.repository.EmailRepository;
 import de.dwienzek.emailtopaperless.service.EmailStoreService;
 import de.dwienzek.emailtopaperless.service.EmailUploadService;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
@@ -12,7 +13,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.springframework.stereotype.Component;
 
-import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.function.Consumer;
 

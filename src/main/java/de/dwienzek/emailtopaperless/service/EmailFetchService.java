@@ -3,6 +3,8 @@ package de.dwienzek.emailtopaperless.service;
 import com.sun.mail.util.MailSSLSocketFactory;
 import de.dwienzek.emailtopaperless.component.ImapConfiguration;
 import de.dwienzek.emailtopaperless.util.UsernamePasswordAuthenticator;
+import jakarta.mail.*;
+import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,8 +12,6 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import javax.mail.*;
-import javax.mail.internet.MimeMessage;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 import java.util.function.Consumer;
