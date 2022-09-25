@@ -119,24 +119,3 @@ jobs:
           path: target
       - name: Install with Maven
         run: mvn -T 1C install
-
-  deploy:
-    needs: install
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Sourcecode
-        uses: actions/checkout@v3.0.0
-      - name: Set up Java 17
-        uses: actions/setup-java@v3.1.1
-        with:
-          distribution: temurin
-          java-version: 17
-          architecture: x64
-          cache: 'maven'
-      - name: Cache build files
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/target') }}
-          path: target
-      - name: Install with Maven
-        run: mvn -T 1C deploy
