@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  email-to-paperless:
+    image: ghcr.io/skyleiger/email-to-paperless:latest
+    restart: always
+    volumes:
+      - email-to-paperless_logs:/email-to-paperless/logs
+    networks:
+      - database_network
+    environment:
+      - DB_URL=jdbc:mariadb://database:3306/${DB_NAME}
+    env_file:
+      - .env
+  database:
+    image: mariadb:latest
+    restart: always
+    volumes:
+      - email-to-paperless_db:/var/lib/mysql
+    networks:
+      - database_network
+    environment:
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+volumes:
+  email-to-paperless_logs:
+  email-to-paperless_db:
+networks:
+  database_network:
