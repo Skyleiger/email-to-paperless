@@ -16,7 +16,8 @@ env:
 jobs:
   build:
     name: Docker Image Build
-    if: "contains(github.ref, 'tags')" # only create docker image on tag push
+    # only create docker image on tag push
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Sourcecode
