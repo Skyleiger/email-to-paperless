@@ -66,11 +66,8 @@ jobs:
           name: email-to-paperless.jar
           path: target/email-to-paperless.jar
 
-      - name: Convert image name to lowercase
-        run: DOCKER_IMAGE_NAME=$(echo $DOCKER_IMAGE_NAME | tr '[A-Z]' '[a-z]')
-
       - name: Build image
-        run: docker build . --tag $DOCKER_IMAGE_NAME --label "run-number=${GITHUB_RUN_ID}"
+        run: docker build . --tag $(echo $DOCKER_IMAGE_NAME | tr '[A-Z]' '[a-z]') --label "run-number=${GITHUB_RUN_ID}"
 
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $DOCKER_REGISTRY -u ${{ github.actor }} --password-stdin
