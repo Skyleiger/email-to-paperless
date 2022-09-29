@@ -1,0 +1,91 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  DOCKER_IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    name: Maven-Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sourcecode
+        uses: actions/checkout@v3.0.0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v3.1.1
+        with:
+          distribution: temurin
+          java-version: 17
+          architecture: x64
+          cache: 'maven'
+
+      - name: Cache build files
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/target') }}
+          path: target
+
+      - name: Build with Maven
+        run: mvn -T 1C package
+
+      - name: Upload built JAR
+        uses: actions/upload-artifact@v3
+        with:
+          name: email-to-paperless.jar
+          path: target/email-to-paperless.jar
+          if-no-files-found: error
+
+  docker:
+    name: Docker Image Build
+    needs: build
+    # only create docker image on tag push
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Dockerfile from Sourcecode
+        uses: Bhacaz/checkout-files@v2
+        with:
+          files: Dockerfile
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: email-to-paperless.jar
+          path: target/email-to-paperless.jar
+
+      - name: Build image
+        run: docker build . --tag $DOCKER_IMAGE_NAME --label "run-number=${GITHUB_RUN_ID}"
+
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $DOCKER_REGISTRY -u ${{ github.actor }} --password-stdin
+
+      - name: Push image
+        run: |
+          IMAGE_ID=$DOCKER_REGISTRY/$DOCKER_IMAGE_NAME
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+
+          docker tag $DOCKER_IMAGE_NAME $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
