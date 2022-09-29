@@ -11,11 +11,6 @@ on:
       - master
   workflow_dispatch:
 
-env:
-  DOCKER_REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
-  DOCKER_IMAGE_NAME: ${{ github.repository }}
-
 jobs:
   build:
     name: Maven-Build
@@ -54,6 +49,10 @@ jobs:
     # only create docker image on tag push
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      # github.repository as <account>/<repo>
+      IMAGE_NAME: ${{ github.repository }}
     steps:
       - name: Checkout Dockerfile from Sourcecode
         uses: Bhacaz/checkout-files@v2
@@ -67,15 +66,16 @@ jobs:
           path: target/email-to-paperless.jar
 
       - name: Build image
-        run: docker build . --tag $(echo $DOCKER_IMAGE_NAME | tr '[A-Z]' '[a-z]') --label "run-number=${GITHUB_RUN_ID}"
+        run: |
+          IMAGE_NAME=$(echo $IMAGE_NAME | tr '[A-Z]' '[a-z]')
+          docker build . --tag $IMAGE_NAME --label "run-number=${GITHUB_RUN_ID}"
 
       - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $DOCKER_REGISTRY -u ${{ github.actor }} --password-stdin
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
 
       - name: Push image
         run: |
-          DOCKER_IMAGE_NAME=$(echo $DOCKER_IMAGE_NAME | tr '[A-Z]' '[a-z]')
-          IMAGE_ID=$DOCKER_REGISTRY/$DOCKER_IMAGE_NAME
+          IMAGE_ID=$REGISTRY/$IMAGE_NAME
           # Change all uppercase to lowercase
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
 
@@ -85,9 +85,10 @@ jobs:
           # Strip "v" prefix from tag name
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
 
+          echo IMAGE_NAME=$IMAGE_NAME
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
 
-          docker tag $DOCKER_IMAGE_NAME $IMAGE_ID:$VERSION
-          docker tag $DOCKER_IMAGE_NAME $IMAGE_ID:latest
-          docker push $IMAGE_ID:$VERSION
+          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker tag $IMAGE_NAME $IMAGE_ID:latest
+          docker push $IMAGE_ID --all-tags
