@@ -92,3 +92,42 @@ jobs:
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker tag $IMAGE_NAME $IMAGE_ID:latest
           docker push $IMAGE_ID --all-tags
+
+  release:
+    name: Create Release
+    needs: build
+    # only create release on tag push and no pre-release identifiers in the tag name
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, 'alpha') && !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'rc')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: email-to-paperless.jar
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: email-to-paperless.jar
+          automatic_release_tag: latest
+          title: ${{ github.event.repository.name }} ${{ github.ref_name }}
+
+  pre-release:
+    name: Create Pre-Release
+    needs: build
+    # only create pre-release on tag push and pre-release identifiers in the tag name
+    if: startsWith(github.ref, 'refs/tags/v') && (contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: email-to-paperless.jar
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: true
+          files: email-to-paperless.jar
+          title: ${{ github.event.repository.name }} ${{ github.ref_name }}
