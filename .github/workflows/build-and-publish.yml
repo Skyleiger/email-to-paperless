@@ -1,0 +1,134 @@
+name: Build-And-Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Maven-Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sourcecode
+        uses: actions/checkout@v3.0.0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v3.1.1
+        with:
+          distribution: temurin
+          java-version: 17
+          architecture: x64
+          cache: 'maven'
+          server-id: github
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      - name: Cache build files
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/target') }}
+          path: target
+
+      - name: Build with Maven
+        run: mvn --batch-mode -T 1C deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.GH_PACKAGES_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.GH_PACKAGES_TOKEN }}
+
+      - name: Upload built JAR
+        uses: actions/upload-artifact@v3
+        with:
+          name: email-to-paperless.jar
+          path: target/email-to-paperless.jar
+          if-no-files-found: error
+
+  docker:
+    name: Docker Image Build
+    needs: build
+    # only create docker image on tag push
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      # github.repository as <account>/<repo>
+      IMAGE_NAME: ${{ github.repository }}
+    steps:
+      - name: Checkout Dockerfile from Sourcecode
+        uses: Bhacaz/checkout-files@v2
+        with:
+          files: Dockerfile
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: email-to-paperless.jar
+          path: target/email-to-paperless.jar
+
+      - name: Build image
+        run: |
+          docker build . --tag $(echo $IMAGE_NAME | tr '[A-Z]' '[a-z]') --label "run-number=${GITHUB_RUN_ID}"
+
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+
+      - name: Push image
+        run: |
+          IMAGE_NAME=$(echo $IMAGE_NAME | tr '[A-Z]' '[a-z]')
+          IMAGE_ID=$REGISTRY/$IMAGE_NAME
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          echo IMAGE_NAME=$IMAGE_NAME
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+
+          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker tag $IMAGE_NAME $IMAGE_ID:latest
+          docker push $IMAGE_ID --all-tags
+
+  release:
+    name: Create Release
+    needs: build
+    # only create release on tag push and no pre-release identifiers in the tag name
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, 'alpha') && !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'rc')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: email-to-paperless.jar
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: email-to-paperless.jar
+          automatic_release_tag: latest
+          title: ${{ github.event.repository.name }} ${{ github.ref_name }}
+
+  pre-release:
+    name: Create Pre-Release
+    needs: build
+    # only create pre-release on tag push and pre-release identifiers in the tag name
+    if: startsWith(github.ref, 'refs/tags/v') && (contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: email-to-paperless.jar
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: true
+          files: email-to-paperless.jar
+          title: ${{ github.event.repository.name }} ${{ github.ref_name }}
