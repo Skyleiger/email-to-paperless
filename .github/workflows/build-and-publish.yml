@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Maven-Deploy
+    name: Maven-Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Sourcecode
@@ -21,9 +21,6 @@ jobs:
           java-version: 17
           architecture: x64
           cache: 'maven'
-          server-id: github
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
 
       - name: Cache build files
         uses: actions/cache@v3
@@ -32,10 +29,7 @@ jobs:
           path: target
 
       - name: Build with Maven
-        run: mvn --batch-mode -T 1C deploy
-        env:
-          MAVEN_USERNAME: ${{ secrets.GH_PACKAGES_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.GH_PACKAGES_TOKEN }}
+        run: mvn -T 1C package
 
       - name: Upload built JAR
         uses: actions/upload-artifact@v3
