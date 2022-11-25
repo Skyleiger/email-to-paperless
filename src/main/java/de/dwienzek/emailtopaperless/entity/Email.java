@@ -1,13 +1,16 @@
 package de.dwienzek.emailtopaperless.entity;
 
-import lombok.*;
-import org.hibernate.Hibernate;
-
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.Hibernate;
+
 import java.time.Instant;
 import java.util.Objects;
 
