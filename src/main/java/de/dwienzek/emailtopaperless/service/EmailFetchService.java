@@ -3,7 +3,12 @@ package de.dwienzek.emailtopaperless.service;
 import com.sun.mail.util.MailSSLSocketFactory;
 import de.dwienzek.emailtopaperless.component.ImapConfiguration;
 import de.dwienzek.emailtopaperless.util.UsernamePasswordAuthenticator;
-import jakarta.mail.*;
+import jakarta.mail.Authenticator;
+import jakarta.mail.Folder;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
+import jakarta.mail.Store;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
@@ -44,8 +49,8 @@ public class EmailFetchService {
     }
 
     private void fetchEmails(Folder folder, Consumer<MimeMessage> function) throws MessagingException {
-        if (configuration.getExcludedFolders().contains(folder.getName())) {
-            LOGGER.debug("Skipping folder '{}', because it is excluded.", folder.getName());
+        if (!configuration.isFolderIncluded(folder.getName())) {
+            LOGGER.info("Skipping folder '{}', because it's not included (or excluded).", folder.getName());
             return;
         }
 

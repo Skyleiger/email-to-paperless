@@ -2,6 +2,7 @@ imap:
   url: ${IMAP_URL}
   username: ${IMAP_USERNAME}
   password: ${IMAP_PASSWORD}
+  includedFolders: ${IMAP_INCLUDED_FOLDERS:}
   excludedFolders: ${IMAP_EXCLUDED_FOLDERS:}
 paperless:
   url: ${PAPERLESS_URL}
@@ -21,7 +22,7 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: 'create-drop'
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MariaDB103Dialect
