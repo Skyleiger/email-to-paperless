@@ -4,12 +4,15 @@ imap:
   password: ${IMAP_PASSWORD}
   includedFolders: ${IMAP_INCLUDED_FOLDERS:}
   excludedFolders: ${IMAP_EXCLUDED_FOLDERS:}
-paperless:
-  url: ${PAPERLESS_URL}
-  token: ${PAPERLESS_TOKEN}
-  tags: ${PAPERLESS_TAGS:}
 email:
   update-interval: ${EMAIL_UPDATE_INTERVAL:240}
+  storing:
+    strategy: ${EMAIL_STORING_STRATEGY:PAPERLESS}
+    folder: ${EMAIL_STORING_FOLDER:emails}
+paperless:
+  url: ${PAPERLESS_URL:}
+  token: ${PAPERLESS_TOKEN:}
+  tags: ${PAPERLESS_TAGS:}
 server:
   error:
     whitelabel:
