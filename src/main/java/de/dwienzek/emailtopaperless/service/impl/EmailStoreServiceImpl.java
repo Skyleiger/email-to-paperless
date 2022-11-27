@@ -75,7 +75,7 @@ public class EmailStoreServiceImpl implements EmailStoreService {
     public static final String SCRIPT_TEMPLATE_RESOURCE_FILE = "contentScript.js";
 
     /*
-     * Set System parameters to alleviate Java's built in Mime Parser strictness.
+     * Set System parameters to alleviate Java's built-in Mime Parser strictness.
      */
     static {
         System.setProperty("mail.mime.address.strict", Boolean.FALSE.toString());
@@ -99,6 +99,7 @@ public class EmailStoreServiceImpl implements EmailStoreService {
     }
 
     @Override
+    @SneakyThrows(value = InterruptedException.class)
     public StoredEmail storeEmail(MimeMessage message) throws EmailStoreException {
         try {
             String subject = message.getSubject();
@@ -116,7 +117,7 @@ public class EmailStoreServiceImpl implements EmailStoreService {
             LOGGER.info("Email '{}' saved at '{}'.", subject, emailDirectory);
 
             return new StoredEmail(emailDirectory, messagePath, attachmentsDirectory);
-        } catch (MessagingException | IOException | InterruptedException exception) {
+        } catch (MessagingException | IOException exception) {
             throw new EmailStoreException(exception);
         }
     }
