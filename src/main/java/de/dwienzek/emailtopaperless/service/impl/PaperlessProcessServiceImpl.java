@@ -14,12 +14,10 @@ import org.apache.hc.client5.http.cookie.Cookie;
 import org.apache.hc.client5.http.cookie.CookieStore;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -85,7 +83,7 @@ public class PaperlessProcessServiceImpl implements EmailProcessService {
             }
 
             LOGGER.info("Upload to paperless finished.");
-        } catch (IOException | ParseException exception) {
+        } catch (IOException exception) {
             throw new EmailProcessException(exception);
         }
     }
@@ -97,7 +95,7 @@ public class PaperlessProcessServiceImpl implements EmailProcessService {
     }
 
     private void uploadDocument(String url, String title, Instant timestamp,
-                                Path path) throws IOException, ParseException {
+                                Path path) throws IOException {
         LOGGER.debug("Upload document [path={}, title={}, timestamp={}] to '{}'.", path, title, timestamp, url);
 
         refreshCSRFCookieIfRequired();
@@ -125,25 +123,23 @@ public class PaperlessProcessServiceImpl implements EmailProcessService {
 
             HttpEntity multipart = builder.build();
             httpPost.setEntity(multipart);
-            try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-                String content = EntityUtils.toString(response.getEntity());
 
-                if (!content.equals("\"OK\"")) {
-                    LOGGER.warn("Response of document upload endpoint '{}' returned an illegal response: {}", url, content);
-                    return;
-                }
+            String content = httpClient.execute(httpPost, response -> EntityUtils.toString(response.getEntity()));
 
+            if (!content.equals("\"OK\"")) {
+                LOGGER.warn("Response of document upload endpoint '{}' returned an illegal response: {}", url, content);
+                return;
             }
 
             LOGGER.debug("Upload of document finished.");
-        } catch (IOException | ParseException exception) {
+        } catch (IOException exception) {
             LOGGER.debug("Upload of document failed.", exception);
             throw exception;
         }
     }
 
     private void refreshCSRFCookieIfRequired() throws IOException {
-        if (csrfCookie == null || csrfCookie.getExpiryDate().toInstant().isBefore(Instant.now())) {
+        if (csrfCookie == null || csrfCookie.getExpiryInstant().isBefore(Instant.now())) {
             LOGGER.info("CSRF-Cookie is expired.");
             refreshCSRFCookie();
         }
@@ -161,15 +157,14 @@ public class PaperlessProcessServiceImpl implements EmailProcessService {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpGet httpGet = new HttpGet(url);
             httpGet.addHeader("Authorization", "Token " + paperlessConfiguration.getToken());
+            httpClient.execute(httpGet, context, response -> response);
 
-            try (CloseableHttpResponse ignored = httpClient.execute(httpGet, context)) {
-                cookieStore = context.getCookieStore();
-                csrfCookie = cookieStore.getCookies()
-                        .stream()
-                        .filter(cookie -> cookie.getName().equals("csrftoken"))
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException("no 'csrftoken' cookie found"));
-            }
+            cookieStore = context.getCookieStore();
+            csrfCookie = cookieStore.getCookies()
+                    .stream()
+                    .filter(cookie -> cookie.getName().equals("csrftoken"))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("no 'csrftoken' cookie found"));
         }
 
         LOGGER.info("CSRF-Cookie refreshed.");
