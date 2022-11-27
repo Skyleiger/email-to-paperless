@@ -11,6 +11,7 @@ import java.util.List;
 @Data
 public class ImapConfiguration {
 
+
     private final String url;
     private final String username;
     private final String password;

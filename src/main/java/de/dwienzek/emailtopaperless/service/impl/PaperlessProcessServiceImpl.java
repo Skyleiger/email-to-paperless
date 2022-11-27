@@ -1,8 +1,11 @@
-package de.dwienzek.emailtopaperless.service;
+package de.dwienzek.emailtopaperless.service.impl;
 
 import de.dwienzek.emailtopaperless.component.PaperlessConfiguration;
 import de.dwienzek.emailtopaperless.dto.StoredEmail;
 import de.dwienzek.emailtopaperless.entity.Email;
+import de.dwienzek.emailtopaperless.exception.EmailProcessException;
+import de.dwienzek.emailtopaperless.service.EmailProcessService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -21,6 +24,7 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
@@ -37,10 +41,15 @@ import java.util.stream.Stream;
 
 @Service
 @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
+@ConditionalOnProperty(
+        value = "email.storing.strategy",
+        havingValue = "PAPERLESS",
+        matchIfMissing = true
+)
 @RequiredArgsConstructor
-public class EmailUploadService {
+public class PaperlessProcessServiceImpl implements EmailProcessService {
 
-    private static final Logger LOGGER = LogManager.getLogger(EmailUploadService.class);
+    private static final Logger LOGGER = LogManager.getLogger(PaperlessProcessServiceImpl.class);
     private static final String CSRF_TOKEN_FETCH_ENDPOINT = "/api";
     private static final String DOCUMENT_POST_API_ENDPOINT = "/api/documents/post_document/";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
@@ -54,21 +63,31 @@ public class EmailUploadService {
     private final PaperlessConfiguration paperlessConfiguration;
     private Cookie csrfCookie;
 
-    public void uploadEmail(Email email, StoredEmail storedEmail) throws IOException, ParseException {
-        LOGGER.info("Uploading email '{}' to paperless.", email.getSubject());
+    @PostConstruct
+    protected void onPostConstruct() {
+        LOGGER.info("Using folder storing strategy.");
+    }
 
-        String url = parseUrl(DOCUMENT_POST_API_ENDPOINT);
+    @Override
+    public void processEmail(Email email, StoredEmail storedEmail) throws EmailProcessException {
+        try {
+            LOGGER.info("Uploading email '{}' to paperless.", email.getSubject());
 
-        Path emailPath = storedEmail.getEmailPath();
-        if (emailPath != null) {
-            uploadDocument(url, email.getSubject(), email.getSentDate(), emailPath);
+            String url = parseUrl(DOCUMENT_POST_API_ENDPOINT);
+
+            Path emailPath = storedEmail.getEmailPath();
+            if (emailPath != null) {
+                uploadDocument(url, email.getSubject(), email.getSentDate(), emailPath);
+            }
+
+            for (Path attachment : getAttachments(storedEmail)) {
+                uploadDocument(url, attachment.getFileName().toString(), email.getSentDate(), attachment);
+            }
+
+            LOGGER.info("Upload to paperless finished.");
+        } catch (IOException | ParseException exception) {
+            throw new EmailProcessException(exception);
         }
-
-        for (Path attachment : getAttachments(storedEmail)) {
-            uploadDocument(url, attachment.getFileName().toString(), email.getSentDate(), attachment);
-        }
-
-        LOGGER.info("Upload to paperless finished.");
     }
 
     private List<Path> getAttachments(StoredEmail storedEmail) throws IOException {
@@ -77,7 +96,8 @@ public class EmailUploadService {
         }
     }
 
-    private void uploadDocument(String url, String title, Instant timestamp, Path path) throws IOException, ParseException {
+    private void uploadDocument(String url, String title, Instant timestamp,
+                                Path path) throws IOException, ParseException {
         LOGGER.debug("Upload document [path={}, title={}, timestamp={}] to '{}'.", path, title, timestamp, url);
 
         refreshCSRFCookieIfRequired();
