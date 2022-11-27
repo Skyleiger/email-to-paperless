@@ -50,6 +50,8 @@ public class LocalFolderProcessServiceImpl implements EmailProcessService {
                     copyFileToTargetFolder(path);
                 }
             }
+            
+            storedEmail.delete();
         } catch (IOException exception) {
             throw new EmailProcessException(exception);
         }

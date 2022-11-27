@@ -25,9 +25,11 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: 'create-drop'
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MariaDB103Dialect
     show-sql: true
     generate-ddl: true
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.sql
