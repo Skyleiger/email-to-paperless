@@ -3,11 +3,10 @@ package de.dwienzek.emailtopaperless.component;
 import de.dwienzek.emailtopaperless.dto.StoredEmail;
 import de.dwienzek.emailtopaperless.entity.Email;
 import de.dwienzek.emailtopaperless.repository.EmailRepository;
+import de.dwienzek.emailtopaperless.service.EmailProcessService;
 import de.dwienzek.emailtopaperless.service.EmailStoreService;
-import de.dwienzek.emailtopaperless.service.EmailUploadService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -22,10 +21,9 @@ public class EmailProcessFunction implements Consumer<MimeMessage> {
 
     private static final Logger LOGGER = LogManager.getLogger(EmailProcessFunction.class);
     private final EmailStoreService emailStoreService;
-    private final EmailUploadService emailUploadService;
+    private final EmailProcessService emailProcessService;
     private final EmailRepository emailRepository;
 
-    @SneakyThrows(value = InterruptedException.class)
     @Override
     public void accept(MimeMessage message) {
         Email email = null;
@@ -40,10 +38,8 @@ public class EmailProcessFunction implements Consumer<MimeMessage> {
             }
 
             storedEmail = emailStoreService.storeEmail(message);
-            emailUploadService.uploadEmail(email, storedEmail);
+            emailProcessService.processEmail(email, storedEmail);
             emailRepository.save(email);
-        } catch (InterruptedException exception) {
-            throw exception;
         } catch (Exception exception) {
             LOGGER.error(new ParameterizedMessage("Error while processing email '{}'.", email), exception);
         } finally {

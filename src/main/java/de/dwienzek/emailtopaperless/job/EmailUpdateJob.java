@@ -1,15 +1,14 @@
 package de.dwienzek.emailtopaperless.job;
 
 import de.dwienzek.emailtopaperless.component.EmailProcessFunction;
+import de.dwienzek.emailtopaperless.exception.EmailFetchException;
 import de.dwienzek.emailtopaperless.service.EmailFetchService;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.security.GeneralSecurityException;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -26,7 +25,7 @@ public class EmailUpdateJob {
 
         try {
             emailFetchService.fetchEmails(emailProcessFunction);
-        } catch (MessagingException | GeneralSecurityException exception) {
+        } catch (EmailFetchException exception) {
             LOGGER.error("Failed to fetch emails from imap server.", exception);
         }
 
